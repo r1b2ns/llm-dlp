@@ -12,6 +12,12 @@ import (
 // (config.json.bak-DATE). Old field names become the new ones, as on load. Returns the path of the
 // copy ("" if there was no file yet).
 func SetFields(fields map[string]any) (string, error) {
+	if protected, err := Protected(); protected {
+		if err != nil {
+			return "", err
+		}
+		return "", ErrProtected()
+	}
 	p := Path("config.json")
 	m := map[string]any{}
 	b, err := os.ReadFile(p)

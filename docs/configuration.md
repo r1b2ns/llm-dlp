@@ -185,7 +185,7 @@ About Copilot:
 | Command | What it does |
 |---|---|
 | `llm-dlp install` | Installs and configures everything, explaining each step |
-| `sudo llm-dlp install-lock` | Claude Code only works when going through llm-dlp (the lock) |
+| `sudo llm-dlp install-lock` | Claude Code only works when going through llm-dlp (the lock), and `config.json` moves to `/etc/llm-dlp`, where only root changes it (see [Security](security.md)) |
 | `llm-dlp uninstall` / `sudo llm-dlp uninstall-lock` | Undoes it |
 | `llm-dlp update [--version X.Y.Z] [--file FILE.tar.gz]` | Downloads the latest version (or the one asked for), checks it and puts it in place of the one running, without taking llm-dlp offline (see [Updating llm-dlp](#updating-llm-dlp)) |
 | `llm-dlp reload` | Puts the installed binary in the air again, with the configuration as it is now, without taking llm-dlp offline |

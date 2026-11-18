@@ -175,6 +175,16 @@ func Load() (Config, error) {
 	if err := os.MkdirAll(Dir(), 0o700); err != nil {
 		return c, err
 	}
+	if protected, err := Protected(); protected {
+		if err != nil {
+			return c, err
+		}
+		b, err := os.ReadFile(SystemPath())
+		if err != nil {
+			return c, err
+		}
+		return c, Read(b, &c)
+	}
 	b, err := os.ReadFile(Path("config.json"))
 	if errors.Is(err, os.ErrNotExist) {
 		out, _ := json.MarshalIndent(c, "", "  ")

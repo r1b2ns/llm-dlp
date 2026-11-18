@@ -155,6 +155,9 @@ func rename(m map[string]any, names map[string]string) bool {
 // something to swap, keeping the previous one alongside (config.json.bak-DATE). Returns the path of
 // the copy ("" if there was nothing to swap). Fields this program does not know stay as they are.
 func MigrateFile(toOld, typesOld bool) (string, error) {
+	if protected, _ := Protected(); protected {
+		return "", nil
+	}
 	p := Path("config.json")
 	b, err := os.ReadFile(p)
 	if err != nil {

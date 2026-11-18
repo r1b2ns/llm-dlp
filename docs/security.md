@@ -17,7 +17,7 @@ To report a vulnerability, see [SECURITY.md](../.github/SECURITY.md).
 user, including the agent induced by a malicious page, can turn the emergency mode on or
 remove the lock. If your `sudo` does not ask for a password, this barrier does not exist.
 
-**The configuration does not have that barrier:** `config.json` belongs to your user, and a
+**Without the lock, the configuration does not have that barrier:** `config.json` belongs to your user, and a
 command run by the agent can change it (turn a detector off, let images through, point
 `upstream` to another server, which would then receive the messages and the API credential).
 The rules that `llm-dlp install` adds to Claude Code forbid the agent to read, edit and
@@ -27,6 +27,16 @@ lock, which needs `sudo`, they offer to add them (`llm-dlp status` warns while o
 removes protection or sends the messages somewhere other than the Anthropic API, Claude
 Code shows a warning **on every message**, and so does `llm-dlp status`. If you changed
 nothing and the warning showed up, check `config.json`.
+
+**With the lock, the configuration has it too:** `sudo llm-dlp install-lock` copies your
+`config.json` to `/etc/llm-dlp/config.json`, owned by root and writable only by root. From then
+on llm-dlp reads only that file and ignores the one in `~/.config/llm-dlp`, so a command run by
+the agent (any one: `find`, `python`...) no longer changes what is masked or where the messages
+go. Reading it needs no `sudo`: Claude Code, the hooks and the proxy work as before, also in the
+desktop app. To change the configuration: `sudoedit /etc/llm-dlp/config.json` and then
+`llm-dlp reload`. If that file stops belonging only to root (another owner, write permission for
+the group or the others, a link), llm-dlp does not start and the messages are blocked.
+`sudo llm-dlp uninstall-lock` moves it back to `~/.config/llm-dlp/config.json`.
 
 **What it does not protect:**
 

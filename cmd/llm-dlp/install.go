@@ -167,7 +167,11 @@ In two steps (OCR and lock) it uses sudo: your password will be asked at that ti
 			changed["terms"] = cfg.Terms
 		}
 	}
-	if _, err := os.Stat(config.Path("config.json")); errors.Is(err, os.ErrNotExist) {
+	if protected, _ := config.Protected(); protected {
+		if len(changed) > 0 {
+			fmt.Println("      ! " + config.ErrProtected().Error() + "; the answers above were not saved")
+		}
+	} else if _, err := os.Stat(config.Path("config.json")); errors.Is(err, os.ErrNotExist) {
 		// first installation: the whole file, with the defaults visible
 		if err := saveConfig(cfg); err != nil {
 			return err
@@ -187,7 +191,7 @@ In two steps (OCR and lock) it uses sudo: your password will be asked at that ti
 	if _, err := mask.Key(kp); err != nil {
 		return err
 	}
-	fmt.Printf("\n      ✓ configuration: %s (internal domains: %d, protected names: %d)\n", config.Path("config.json"), len(cfg.InternalDomains), countTerms(cfg))
+	fmt.Printf("\n      ✓ configuration: %s (internal domains: %d, protected names: %d)\n", config.ActivePath(), len(cfg.InternalDomains), countTerms(cfg))
 	fmt.Printf("      ✓ key: %s — keep a copy in your password manager\n", kp)
 
 	// 3. OCR
@@ -429,7 +433,7 @@ func installLock(remove bool) error {
 		}
 		fmt.Printf("✓ lock installed at %s%s\n  Claude Code will only work going through llm-dlp at 127.0.0.1:%d.\n", lockFile, bak, port)
 	}
-	return nil
+	return lockConfig(remove)
 }
 
 // applyLock adds (or removes) the lock in a managed-settings.json, keeping the rest.

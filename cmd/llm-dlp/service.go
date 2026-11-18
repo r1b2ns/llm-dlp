@@ -204,7 +204,7 @@ func verifyIt() error {
 		warning = "⚠️ llm-dlp in EMERGENCY MODE: messages UNMASKED until " + until + " (sudo llm-dlp emergency off)"
 	} else if weakSet := reducedProtection(cfg); len(weakSet) > 0 {
 		warning = "⚠️ llm-dlp with protection reduced by the configuration: " + strings.Join(weakSet, "; ") +
-			". If it was not you, check " + config.Path("config.json")
+			". If it was not you, check " + config.ActivePath()
 	}
 	if warning != "" {
 		json.NewEncoder(os.Stdout).Encode(map[string]string{"systemMessage": warning})
@@ -290,6 +290,9 @@ func status() error {
 	}
 	if missing := lockMissingRules(); len(missing) > 0 {
 		fmt.Printf("⚠️  the lock lacks rules of this version (%s): run sudo llm-dlp install-lock\n", strings.Join(missing, ", "))
+	}
+	if w := configLockWarning(); w != "" {
+		fmt.Println("⚠️  " + w)
 	}
 	if missingOne := missingOCR(cfg); missingOne != "" && cfg.OCR.Mode == "mask" {
 		fmt.Printf("⚠️  no OCR (%s missing): images and PDFs are not sent. To install: %s\n", missingOne, ocr.InstallHint())

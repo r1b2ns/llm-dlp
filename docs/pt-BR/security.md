@@ -17,7 +17,7 @@ Para relatar uma vulnerabilidade, veja [SECURITY.md](SECURITY.md).
 inclusive o agente induzido por uma página maliciosa, consegue ligar a emergência ou tirar
 a trava. Se o seu `sudo` não pede senha, essa barreira não existe.
 
-**A configuração não tem essa barreira:** o `config.json` é do seu usuário, e um comando
+**Sem a trava, a configuração não tem essa barreira:** o `config.json` é do seu usuário, e um comando
 rodado pelo agente consegue mudá-lo (desligar um detector, liberar imagens, apontar o
 `upstream` para outro servidor, que passaria a receber as mensagens e a credencial da API).
 As regras que o `llm-dlp install` põe no Claude Code proíbem o agente de ler, editar e
@@ -28,6 +28,16 @@ faltar alguma). Por isso, enquanto a configuração
 tirar proteção ou mandar as mensagens para fora da API da Anthropic, o Claude Code mostra
 um aviso **a cada mensagem**, e o `llm-dlp status` também. Se você não mudou nada e o aviso
 apareceu, confira o `config.json`.
+
+**Com a trava, a configuração também tem:** o `sudo llm-dlp install-lock` copia o seu
+`config.json` para `/etc/llm-dlp/config.json`, de dono root e que só o root altera. Dali em
+diante o llm-dlp lê só esse arquivo e ignora o de `~/.config/llm-dlp`, então um comando rodado
+pelo agente (qualquer um: `find`, `python`...) deixa de mudar o que é mascarado e para onde as
+mensagens vão. Ler não precisa de `sudo`: o Claude Code, os hooks e o proxy funcionam como
+antes, também no app desktop. Para mudar a configuração: `sudoedit /etc/llm-dlp/config.json` e
+depois `llm-dlp reload`. Se esse arquivo deixar de ser só do root (outro dono, permissão de
+escrita para o grupo ou os outros, um link), o llm-dlp não sobe e as mensagens são bloqueadas.
+O `sudo llm-dlp uninstall-lock` devolve ele para `~/.config/llm-dlp/config.json`.
 
 **O que não protege:**
 

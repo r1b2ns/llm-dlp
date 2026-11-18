@@ -50,6 +50,9 @@ func serve(args []string) error {
 	os.Remove(config.Path(config.OldSentFile)) // up to 0.9; it would start over anyway
 	go watchEmergency(false)                   // if the administrator turns on emergency, it exits and the supervisor switches mode
 	px := proxy.New(cfg, m, seenSet, lg).WithKey(key).WithSwap(borrowed)
+	if tr, err := newTracer(); err == nil {
+		px = px.WithTrace(tr)
+	}
 	srv := &http.Server{Handler: px, ReadHeaderTimeout: 30 * time.Second}
 	return serveUntilSignal(srv, ln, lg, func() {
 		seenSet.SaveNow()

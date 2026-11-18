@@ -59,6 +59,7 @@ O `sudo llm-dlp uninstall-lock` devolve ele para `~/.config/llm-dlp/config.json`
 | `seen.json` | Hashes de valores já mascarados |
 | `sent.log` | De cada texto já enviado: hashes, posições, tipos e pseudônimos, nunca valores |
 | `llm-dlp.log` | Uma linha por requisição: contagens, tempos e os pseudônimos que voltaram sem virar o valor real, nunca valores. No máximo ~20 MB |
+| `trace.jsonl` | Só enquanto o `llm-dlp trace on` estiver ligado: cada requisição como foi para a API (mascarada) e a resposta antes de desfazer os pseudônimos, sem credenciais. No máximo ~100 MB |
 
 Até a 0.9 esses arquivos tinham nomes em português (`chave`, `pessoas.json`, `vistos.json`,
 `enviados.log`). A primeira vez que uma versão a partir da 0.10 precisa de um deles, ela copia o

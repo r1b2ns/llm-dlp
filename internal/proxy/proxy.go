@@ -37,6 +37,7 @@ type Proxy struct {
 	client  *http.Client
 	key     []byte // for the local port proofs (WithKey)
 	swap    bool   // the port belongs to a supervisor that swaps the proxy without closing it (WithSwap)
+	tracer  *Tracer
 	log     *log.Logger
 	start   time.Time
 	reqs    atomic.Int64
@@ -105,6 +106,11 @@ func (p *Proxy) WithKey(key []byte) *Proxy {
 // closing it (cmd/llm-dlp/swap.go); it is what update asks before requesting the swap.
 func (p *Proxy) WithSwap(swap bool) *Proxy {
 	p.swap = swap
+	return p
+}
+
+func (p *Proxy) WithTrace(t *Tracer) *Proxy {
+	p.tracer = t
 	return p
 }
 
@@ -191,6 +197,28 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	req.Header.Set("accept-encoding", "identity")
 	req.ContentLength = int64(len(body))
 
+	_, tracing := p.tracer.Until()
+	record := func(resp *http.Response, c *captureBuffer, err error) {
+		if !tracing {
+			return
+		}
+		rec := TraceRecord{Time: t0, Method: r.Method, Path: cleaned(r.URL.Path), Target: redactURL(target), Format: format,
+			SentUnmasked: unmasked, Replacements: len(entries), RequestHeaders: redactHeaders(req.Header),
+			RequestBody: traceBody(body), DurationMS: time.Since(t0).Milliseconds()}
+		if err != nil {
+			rec.Error = err.Error()
+		}
+		if resp != nil {
+			rec.Status, rec.ResponseHeaders = resp.StatusCode, redactHeaders(resp.Header)
+		}
+		if c != nil {
+			rec.ResponseBody, rec.ResponseTruncated = traceBody(c.buf.Bytes()), c.truncated
+		}
+		if werr := p.tracer.Write(rec); werr != nil {
+			p.log.Printf("WARNING trace: %v", werr)
+		}
+	}
+
 	resp, err := p.client.Do(req)
 	if err != nil {
 		// only the cause: the whole message carries the address, which may include the API key
@@ -199,6 +227,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if errors.As(err, &ue) {
 			err = ue.Err
 		}
+		record(nil, nil, err)
 		http.Error(w, "llm-dlp: failed to reach the API: "+err.Error(), http.StatusBadGateway)
 		p.log.Printf("ERROR %s %s: upstream: %v", r.Method, cleaned(r.URL.Path), err)
 		return
@@ -208,6 +237,10 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		batch.Freeze()
 	}
 	defer resp.Body.Close()
+	var captured *captureBuffer
+	if tracing {
+		captured = captureResponse(resp)
+	}
 	for k, vs := range resp.Header {
 		if !hopByHop[strings.ToLower(k)] {
 			w.Header()[k] = vs
@@ -248,6 +281,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	default:
 		_, err = io.Copy(w, resp.Body)
 	}
+	record(resp, captured, err)
 	if p.seenSet != nil {
 		p.seenSet.SaveIfDirty()
 	}

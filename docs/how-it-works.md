@@ -50,7 +50,8 @@ anywhere: in a command's output, in a file read afterwards, with no hint nearby.
 | Disk (`seen.json`, `people.json`) | **Only the hash**, made with the key. It is used to recognize the value after a restart. For internal resource names (table, server...), also the type and the day it was learned and last seen (for the 90-day validity) |
 | Disk (`sent.log`) | For each text already sent: a hash of the point of the conversation where it sits and, for each replaced span, where it is in the text, the type and the pseudonym. It makes the text go out identical after a restart (see below) |
 
-No real value and no masked text is written to disk by llm-dlp.
+No real value is written to disk by llm-dlp, and no masked text either, unless you turn on the
+[traffic trace](#the-traffic-trace).
 
 **A learned value applies to new text.** Claude Code resends the whole conversation with
 every message, and the API cache is only valid if the beginning is identical to the previous
@@ -233,4 +234,39 @@ llm-dlp: log of the last 24h (since 13/10 15:04)
   masked by type (distinct values of each request, added up): table 9120, server 2210, cpf 14
   pseudonyms that came back without turning into the real value: none
   sent unmasked: none
+```
+
+## The traffic trace
+
+To check with your own eyes what leaves the machine, turn on the trace for a while:
+
+```
+llm-dlp trace on 30m     # 30 minutes by default, at most 24h
+llm-dlp trace            # on or off, and the size of the file
+llm-dlp trace off        # stops now
+```
+
+While it is on, each request becomes one JSON line in `~/.config/llm-dlp/trace.jsonl`
+(permission `0600`): the method, the path, the destination, the headers, the body **as it went to
+the API** and the API's answer **before the pseudonyms are undone** (the stream as it came, for
+streaming). No restart is needed: it starts on the next message and stops by itself at the time
+set.
+
+- It records only what crossed the machine's border. What Claude Code sent before masking, and
+  what it got after unmasking, never goes to the file. If a real value shows up there, it went to
+  the API: that is what the trace is for.
+- The credentials are removed (`authorization`, `x-api-key`, cookies and any header or query
+  parameter with `key`, `token`, `secret`, `password`, `signature` or `auth` in the name).
+- A request refused by llm-dlp does not appear: nothing went out. A request that failed to reach
+  the API appears with the error. With `fail_closed: false`, a request sent unmasked appears with
+  `"sent_unmasked": true`.
+- An answer above 16 MB is cut (`"response_truncated": true`). The file rotates at 50 MB and keeps
+  one previous file (`trace.jsonl.1`).
+- Emergency mode does not go through the proxy, so it is not traced.
+
+The file keeps the masked conversation on disk: delete it when you are done.
+
+```
+jq -r '[.time, .status, .replacements, .path] | @tsv' ~/.config/llm-dlp/trace.jsonl
+jq '.request_body.messages[-1]' ~/.config/llm-dlp/trace.jsonl | less
 ```

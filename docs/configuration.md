@@ -195,6 +195,7 @@ About Copilot:
 | `llm-dlp import-people FILE.csv --group CODE:NAME:EMAIL` | Teaches people |
 | `llm-dlp columns FILE` | Shows how the fields of a file are understood |
 | `llm-dlp audit [24h\|7d]` | Sums up the log of the period: what was masked by type, pseudonyms that came back without becoming the real value, requests sent without masking, refused ones (see [The log](how-it-works.md#the-log)) |
+| `llm-dlp trace [on [30m]\|off]` | Records each request as it went to the API (masked) and its answer before unmasking, credentials removed (see [The traffic trace](how-it-works.md#the-traffic-trace)) |
 | `llm-dlp test < file` | Shows the masked version of a text |
 | `llm-dlp test-media FILE DIR` | Processes an image or PDF and writes the result to DIR |
 | `llm-dlp measure FILE.jsonl` | Time and coverage over an old Claude Code session (counts only) |

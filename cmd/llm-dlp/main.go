@@ -42,6 +42,8 @@ Check what is masked
   llm-dlp last [N]              shows the last N messages as the API received them (already masked)
   llm-dlp audit [24h|7d]        sums up the log of the period: what was masked by type, pseudonyms that
                                 came back without turning into the real value, unmasked sends, refusals
+  llm-dlp trace [on [30m]|off]  records each request as it went to the API (masked) and its answer
+                                (before unmasking), credentials removed, in trace.jsonl
   llm-dlp test < FILE           shows the masked version of a text
   llm-dlp test-media FILE DIR   processes an image or PDF as the proxy does and writes the result to DIR
   llm-dlp columns FILE          shows how the fields of a file are understood
@@ -124,6 +126,8 @@ func main() {
 		err = simulate(args)
 	case "audit":
 		err = audit(args)
+	case "trace":
+		err = trace(args)
 	case "install":
 		err = install(args)
 	case "uninstall":

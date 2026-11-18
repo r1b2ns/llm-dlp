@@ -50,7 +50,8 @@ qualquer lugar: na saída de um comando, num arquivo lido mais tarde, sem a pist
 | Disco (`seen.json`, `people.json`) | **Só o hash**, feito com a chave. Serve para reconhecer depois de reiniciar. Para nomes de recursos internos (tabela, servidor...), também o tipo e o dia em que foi aprendido e visto pela última vez (para a validade de 90 dias) |
 | Disco (`sent.log`) | Para cada texto já enviado: um hash do ponto da conversa em que ele está e, de cada trecho trocado, onde ele fica no texto, o tipo e o pseudônimo. Serve para o texto sair igual depois de reiniciar (ver abaixo) |
 
-Nenhum valor real e nenhum texto mascarado é gravado em disco pelo llm-dlp.
+Nenhum valor real é gravado em disco pelo llm-dlp, e nenhum texto mascarado também, a não ser que
+você ligue o [registro do tráfego](#o-registro-do-tráfego).
 
 **O valor aprendido vale para texto novo.** O Claude Code reenvia a conversa inteira a cada
 mensagem, e o cache da API só vale se o começo for idêntico ao da vez anterior. Por isso, quando
@@ -232,3 +233,36 @@ llm-dlp: log of the last 24h (since 13/10 15:04)
   sent unmasked: none
 ```
 
+## O registro do tráfego
+
+Para conferir com os próprios olhos o que sai da máquina, ligue o registro por um tempo:
+
+```
+llm-dlp trace on 30m     # 30 minutos por padrão, no máximo 24h
+llm-dlp trace            # ligado ou desligado, e o tamanho do arquivo
+llm-dlp trace off        # para agora
+```
+
+Enquanto estiver ligado, cada requisição vira uma linha JSON em `~/.config/llm-dlp/trace.jsonl`
+(permissão `0600`): o método, o caminho, o destino, os cabeçalhos, o corpo **como foi para a API**
+e a resposta da API **antes de desfazer os pseudônimos** (o stream como chegou, no streaming). Não
+precisa reiniciar: começa na próxima mensagem e para sozinho na hora marcada.
+
+- Só grava o que cruzou a fronteira da máquina. O que o Claude Code mandou antes de mascarar, e o
+  que recebeu depois de desmascarar, nunca vai para o arquivo. Se aparecer um valor real ali, ele
+  foi para a API: é para isso que o registro serve.
+- As credenciais são tiradas (`authorization`, `x-api-key`, cookies e qualquer cabeçalho ou
+  parâmetro da URL com `key`, `token`, `secret`, `password`, `signature` ou `auth` no nome).
+- Uma requisição recusada pelo llm-dlp não aparece: nada saiu. Uma que não conseguiu chegar à API
+  aparece com o erro. Com `fail_closed: false`, uma requisição enviada sem máscara aparece com
+  `"sent_unmasked": true`.
+- Uma resposta acima de 16 MB é cortada (`"response_truncated": true`). O arquivo gira em 50 MB e
+  guarda um anterior (`trace.jsonl.1`).
+- O modo de emergência não passa pelo proxy, então não é registrado.
+
+O arquivo guarda a conversa mascarada em disco: apague quando terminar.
+
+```
+jq -r '[.time, .status, .replacements, .path] | @tsv' ~/.config/llm-dlp/trace.jsonl
+jq '.request_body.messages[-1]' ~/.config/llm-dlp/trace.jsonl | less
+```

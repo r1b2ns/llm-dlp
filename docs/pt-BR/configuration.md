@@ -197,6 +197,7 @@ Sobre o Copilot:
 | `llm-dlp import-people ARQ.csv --group COD:NOME:EMAIL` | Ensina pessoas |
 | `llm-dlp columns ARQ` | Mostra como os campos de um arquivo são entendidos |
 | `llm-dlp audit [24h\|7d]` | Resume o log do período: o que foi mascarado por tipo, pseudônimos que voltaram sem virar o valor real, envios sem máscara, recusas (ver [O log](how-it-works.md#o-log)) |
+| `llm-dlp trace [on [30m]\|off]` | Grava cada requisição como foi para a API (mascarada) e a resposta antes de desmascarar, sem credenciais (ver [O registro do tráfego](how-it-works.md#o-registro-do-tráfego)) |
 | `llm-dlp test < arquivo` | Mostra a versão mascarada de um texto |
 | `llm-dlp test-media ARQ DIR` | Processa uma imagem ou PDF e grava o resultado em DIR |
 | `llm-dlp measure ARQ.jsonl` | Tempo e cobertura sobre uma sessão antiga do Claude Code (só contagens) |

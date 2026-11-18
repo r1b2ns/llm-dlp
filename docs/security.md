@@ -58,6 +58,7 @@ the group or the others, a link), llm-dlp does not start and the messages are bl
 | `seen.json` | Hashes of values already masked |
 | `sent.log` | For each text already sent: hashes, positions, types and pseudonyms, never values |
 | `llm-dlp.log` | One line per request: counts, times and the pseudonyms that came back without becoming the real value, never values. At most ~20 MB |
+| `trace.jsonl` | Only while `llm-dlp trace on`: each request as it went to the API (masked) and the answer before unmasking, credentials removed. At most ~100 MB |
 
 Up to 0.9 these files had Portuguese names (`chave`, `pessoas.json`, `vistos.json`,
 `enviados.log`). The first time a version from 0.10 on needs one of them, it copies the old file

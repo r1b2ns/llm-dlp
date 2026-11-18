@@ -23,6 +23,7 @@ var (
 	rePasswordSentence = regexp.MustCompile("(?i)\\b(?:senha|password)\\b(?:[ \\t]+[\\p{L}_\\-]+){0,4}?[ \\t]+(?:é|eh|is|era|será)[ \\t]+[\"'`]?([^\\s\"'`,;]{6,})")
 	// word and value between backticks or quotes, without ":" or "=" (senha `X`, password "X")
 	reQuotedPassword = regexp.MustCompile("(?i)\\b(?:senha|password|passwd|pwd)\\b(?:[ \\t]+[\\p{L}_\\-]+){0,3}?[ \\t]+[`\"']([^\\s`\"']{4,})[`\"']")
+	rePasswordBare   = regexp.MustCompile("(?i)\\b(?:senha|password)[ \\t]+([^\\s\"'`,;]{6,})")
 	// user:password@ in a URL
 	rePasswordURL = regexp.MustCompile("[a-zA-Z][a-zA-Z0-9+.\\-]*://[^\\s:/@]+:([^\\s@/]{3,})@")
 	// command line
@@ -116,6 +117,7 @@ func (m *Masker) findPasswords(s, lower string, add func(ini, end int, typ strin
 		look(rePasswordAttr, false)
 		look(rePasswordSentence, false)
 		look(reQuotedPassword, false)
+		look(rePasswordBare, false)
 		look(rePasswordCLI, false)
 	} else if strings.Contains(s, " -p") || strings.Contains(s, " -u ") || strings.Contains(s, "--user ") {
 		look(rePasswordCLI, false)

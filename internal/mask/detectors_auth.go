@@ -5,6 +5,8 @@ import (
 	_ "embed"
 	"regexp"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 )
 
 // Authentication data. Resolução CD/ANPD nº 15/2024, art. 5º, IV, lists "dados de autenticação em
@@ -63,6 +65,11 @@ func (m *Masker) findAuth(s, lower string, add func(ini, end int, typ string)) {
 			label, sep, v := s[ix[2]:ix[3]], ix[6] >= 0, s[ix[8]:ix[9]]
 			if lo, hi := authDigits(label); len(v) < lo || len(v) > hi {
 				continue
+			}
+			if ix[8] > ix[3] {
+				if r, _ := utf8.DecodeLastRuneInString(s[:ix[8]]); unicode.IsLetter(r) {
+					continue
+				}
 			}
 			// without ":"/"=" or "é"/"is", a year after a preposition is a date ("a senha de 2024")
 			if !sep && len(v) == 4 && (strings.HasPrefix(v, "19") || strings.HasPrefix(v, "20")) {
